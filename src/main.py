@@ -17,7 +17,11 @@ import time
 from typing import Optional, List, Dict
 from fastapi import FastAPI, Request, Header, HTTPException, BackgroundTasks
 from fastapi.responses import JSONResponse
+import omium
 from contextlib import asynccontextmanager
+
+# Initialize Omium
+omium.init()
 
 # Ensure src is in path for imports
 sys.path.insert(0, str(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -126,6 +130,7 @@ def parse_issue_payload(payload: dict) -> ParsedIssue:
 # CORE PIPELINE — Multi-Agent Orchestration
 # =============================================================================
 
+@omium.trace("issue_resolution_pipeline")
 async def process_issue_async(parsed: ParsedIssue):
     """
     FULL MULTI-AGENT PIPELINE
@@ -362,6 +367,7 @@ async def process_issue_async(parsed: ParsedIssue):
 # DECISION HANDLERS
 # =============================================================================
 
+@omium.trace("execute_full")
 async def _execute_full(parsed: ParsedIssue, solution: Dict, research_result: Dict, critic_result: Dict):
     """HIGH CONFIDENCE: Post comment + generate draft PR patch"""
     print(f"\n💬 [6a] Posting AI comment + draft PR suggestion...")
@@ -392,6 +398,7 @@ async def _execute_full(parsed: ParsedIssue, solution: Dict, research_result: Di
     else:
         print(f"   ⚠️  Post failed: {comment_result.get('message')}")
 
+@omium.trace("execute_with_caution")
 async def _execute_with_caution(parsed: ParsedIssue, solution: Dict):
     """MEDIUM CONFIDENCE: Post with disclaimer"""
     print(f"\n💬 [6b] Posting with CAUTION disclaimer...")
@@ -409,6 +416,7 @@ async def _execute_with_caution(parsed: ParsedIssue, solution: Dict):
     else:
         print(f"   ⚠️  Post failed")
 
+@omium.trace("escalate_to_human")
 async def _escalate_to_human(parsed: ParsedIssue, reason: str):
     """LOW CONFIDENCE: Tag human, post minimal info"""
     print(f"\n🚨 [6c] ESCALATING to human: {reason}")
@@ -491,6 +499,7 @@ async def get_queue():
     }
 
 @app.post("/webhook/github")
+@omium.trace("github_webhook")
 async def github_webhook(
     request: Request,
     background_tasks: BackgroundTasks,
@@ -539,6 +548,7 @@ async def github_webhook(
     )
 
 @app.post("/simulate")
+@omium.trace("simulate_issue")
 async def simulate_issue(issue_payload: dict):
     """
     Test endpoint — runs full pipeline with fake payload

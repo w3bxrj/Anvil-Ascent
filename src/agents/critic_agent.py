@@ -3,6 +3,7 @@ CRITIC AGENT: Validates solution quality — prevents hallucination
 SUPER important for production credibility
 """
 
+import omium
 from typing import Dict, List
 
 class CriticAgent:
@@ -13,6 +14,7 @@ class CriticAgent:
     - Contradictions (does fix contradict existing code?)
     """
     
+    @omium.trace("critic_agent")
     def evaluate(self, solution: Dict, research_files: List[Dict],
                 issue_title: str, issue_body: str) -> Dict:
         """

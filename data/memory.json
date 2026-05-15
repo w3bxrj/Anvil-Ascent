@@ -38,6 +38,19 @@
       ],
       "repo": "user/my-app",
       "timestamp": "2026-05-15T19:22:32.990484"
+    },
+    {
+      "number": 42,
+      "title": "Bug: Profile picture not updating",
+      "type": "bug",
+      "solution_summary": "The update issue is caused by improper state handling in scratch\\trigger_demo.py. Race condition or missing validation triggers this error.",
+      "files_modified": [
+        "scratch\\trigger_demo.py",
+        "src\\config.py",
+        "src\\classifier.py"
+      ],
+      "repo": "user/test-repo",
+      "timestamp": "2026-05-16T01:15:22.859221"
     }
   ],
   "patterns": {
@@ -45,7 +58,10 @@
       "crashes",
       "clicking",
       "login",
-      "button"
+      "button",
+      "profile",
+      "picture",
+      "updating"
     ],
     "feature": [
       "support"

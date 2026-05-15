@@ -1,7 +1,4 @@
-"""
-Research Agent: Main orchestrator that combines indexing + retrieval
-"""
-
+import omium
 from src.agents.repo_indexer import indexer
 from src.agents.code_retriever import retriever
 from typing import Dict, List, Optional
@@ -14,12 +11,14 @@ class ResearchAgent:
     2. Indexes if needed (local or GitHub)
     3. Retrieves relevant code context
     4. Returns structured research report
+    5. Traced by Omium
     """
     
     def __init__(self):
         self.indexer = indexer
         self.retriever = retriever
     
+    @omium.trace("research_agent")
     async def investigate(self, repo_full_name: str, issue_title: str,
                         issue_body: str, keywords: List[str],
                         local_path: Optional[str] = None) -> Dict:

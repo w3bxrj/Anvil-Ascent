@@ -3,6 +3,7 @@ PLANNER AGENT: Decides WHAT to investigate based on issue type
 Most important missing piece — makes system truly autonomous
 """
 
+import omium
 from typing import List, Dict, Literal
 from enum import Enum
 
@@ -18,6 +19,7 @@ class PlannerAgent:
     AI decides investigation strategy — not hardcoded flow
     """
     
+    @omium.trace("planner_agent")
     def plan_investigation(self, issue_title: str, issue_body: str,
                           issue_type: str, priority: str,
                           keywords: List[str]) -> Dict:

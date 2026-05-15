@@ -4,6 +4,7 @@ HYPOTHESIS AGENT: Generates and tests root cause theories
 Adds reasoning layer — not just retrieval
 """
 
+import omium
 from typing import List, Dict
 
 class HypothesisAgent:
@@ -11,6 +12,7 @@ class HypothesisAgent:
     Creates multiple hypotheses, tests against evidence, picks best
     """
     
+    @omium.trace("hypothesis_agent")
     def generate_hypotheses(self, issue_title: str, issue_body: str,
                          keywords: List[str], research_files: List[Dict]) -> Dict:
         """

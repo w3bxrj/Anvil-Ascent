@@ -9,6 +9,7 @@ from sentence_transformers import SentenceTransformer
 from git import Repo
 from pathlib import Path
 import tempfile
+import omium
 from typing import List, Dict, Optional
 
 # Supported code extensions
@@ -44,6 +45,7 @@ class RepoIndexer:
             )
         return self.collections[repo_full_name]
     
+    @omium.trace("index_local_repo")
     def index_local_repo(self, local_path: str, repo_full_name: str) -> Dict:
         """
         Index a local repository folder (for hackathon demo / testing)
@@ -85,6 +87,7 @@ class RepoIndexer:
             "source": "local"
         }
     
+    @omium.trace("clone_and_index")
     def clone_and_index(self, repo_url: str, repo_full_name: str) -> Dict:
         """
         Clone repo from GitHub, extract files, create embeddings
@@ -164,6 +167,7 @@ class RepoIndexer:
         
         return files
     
+    @omium.trace("index_batch")
     def _index_batch(self, collection, files: List[Dict], repo_name: str):
         """Index a batch of files into ChromaDB"""
         ids = []

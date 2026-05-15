@@ -4,6 +4,7 @@ GitHub Comment Poster: Post AI-generated solution as issue comment
 
 import os
 import httpx
+import omium
 from typing import Dict
 
 class GitHubCommenter:
@@ -12,6 +13,7 @@ class GitHubCommenter:
     def __init__(self):
         self.token = os.getenv("GITHUB_TOKEN", "")
     
+    @omium.trace("post_github_comment")
     async def post_comment(self, repo_full_name: str, issue_number: int,
                           solution: Dict) -> Dict:
         """

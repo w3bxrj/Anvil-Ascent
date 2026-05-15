@@ -1,4 +1,5 @@
 import re
+import omium
 from typing import List, Tuple, Optional
 from .models import IssueType, Priority, ParsedIssue
 
@@ -47,6 +48,7 @@ class IssueClassifier:
         ]
     }
     
+    @omium.trace("issue_classification")
     def classify(self, title: str, body: Optional[str], labels: List[str]) -> Tuple[IssueType, Priority, float, List[str]]:
         """Classify issue and return (type, priority, confidence, keywords)"""
         text = f"{title} {body or ''}".lower()
