@@ -80,21 +80,33 @@ GitHub Issue Opened
 # 📂 Project Structure
 
 ```text
-src/
-├── main.py                  # FastAPI app + webhook endpoint
-├── models.py                # Pydantic schemas
-├── classifier.py            # Issue classification logic
-├── config.py                # Environment configuration
+autonomous-issue-resolver/
+├── .env                          # API keys (secret)
+├── .gitignore                    # Git ignore rules
+├── requirements.txt              # Python dependencies
+├── README.md                     # Project documentation
 │
-└── agents/
-    ├── repo_indexer.py      # Repository indexing + embeddings
-    ├── code_retriever.py    # Semantic retrieval (RAG)
-    ├── research_agent.py    # Research orchestration
-    ├── solution_agent.py    # AI fix generation
-    └── github_commentor.py  # Posts comment to GitHub
-
-tests/
-└── test_webhook.py
+├── src/                          # MAIN CODE
+│   ├── __init__.py               # Package marker
+│   ├── main.py                   # 🚀 ENTRY POINT - FastAPI server
+│   ├── models.py                 # 📦 Data structures (Pydantic)
+│   ├── classifier.py             # 🏷️ Issue type detector
+│   ├── config.py                 # ⚙️ Settings loader
+│   │
+│   └── agents/                   # 🤖 AI AGENTS
+│       ├── __init__.py           # Package marker
+│       ├── repo_indexer.py       # 📚 Codebase → Vector DB
+│       ├── code_retriever.py     # 🔍 Semantic search (RAG)
+│       ├── research_agent.py     # 🔬 Investigation orchestrator
+│       ├── solution_agent.py     # 🧠 LLM fix generator
+│       └── github_commenter.py   # 💬 GitHub API poster
+│
+├── tests/
+│   ├── __init__.py               # Package marker
+│   └── test_webhook.py           # 🧪 Fake GitHub payloads
+│
+└── data/
+    └── chroma_db/                # 🗄️ Vector database storage
 ```
 
 ---
