@@ -1,99 +1,367 @@
 # 🤖 Autonomous Issue Resolver
 
-&gt; **AI-powered GitHub issue investigation & autonomous resolution system**
-&gt; 
-&gt; *Built for Hackathons | Autonomous Agents | RAG + LLM Pipeline*
+> AI-powered GitHub issue investigation agent that automatically researches bugs, understands repositories using RAG, and posts intelligent fix suggestions back to GitHub issues.
 
 ---
 
-## 🎯 What It Does
+# 🚀 Features
 
-When a new GitHub issue is opened, our autonomous agent:
-
-1. **🔔 Receives** the issue via webhook
-2. **🏷️ Classifies** it (Bug / Feature / Security / Performance / Docs)
-3. **🔍 Researches** the codebase using RAG (Retrieval Augmented Generation)
-4. **🧠 Generates** a solution using LLM (Groq/Gemini/OpenAI)
-5. **💬 Posts** an AI-powered comment back to the issue
-
-**Zero human intervention. Fully autonomous.**
+- ✅ GitHub Webhook Integration
+- ✅ Automatic Issue Classification
+- ✅ RAG-based Repository Understanding
+- ✅ Semantic Code Search with ChromaDB
+- ✅ AI-generated Fix Suggestions
+- ✅ Automatic GitHub Comment Posting
+- ✅ FastAPI Backend
+- ✅ Groq / OpenAI Compatible
 
 ---
 
-## 🏗️ Architecture
+# 🎯 What It Does
+
+Whenever someone opens a GitHub issue, the system automatically:
+
+1. Receives the issue through a GitHub webhook
+2. Classifies the issue type
+3. Indexes and researches the repository using embeddings + vector search
+4. Retrieves relevant code context using RAG
+5. Generates an AI-powered solution
+6. Posts the response directly back to the GitHub issue
+
+All of this happens automatically in under 30 seconds.
+
+---
+
+# 🏗️ Architecture
+
+```text
 GitHub Issue Opened
-│
-▼
-┌─────────────────┐
-│  Webhook Parser │  ← FastAPI + Pydantic
-│  & Classifier   │
-└────────┬────────┘
-│
-▼
-┌─────────────────┐
-│  Research Agent │  ← ChromaDB + Sentence Transformers
-│  (RAG Pipeline) │
-└────────┬────────┘
-│
-▼
-┌─────────────────┐
-│  Solution Agent │  ← LLM (Groq/Gemini/OpenAI)
-│  (Code Drafting)│
-└────────┬────────┘
-│
-▼
-┌─────────────────┐
-│  GitHub Comment │  ← GitHub REST API
-│  Poster         │
-└─────────────────┘
+        │
+        ▼
+┌────────────────────┐
+│ Webhook Handler    │
+│ + Issue Classifier │
+└─────────┬──────────┘
+          │
+          ▼
+┌────────────────────┐
+│ Research Agent     │
+│ (RAG + ChromaDB)   │
+└─────────┬──────────┘
+          │
+          ▼
+┌────────────────────┐
+│ Solution Agent     │
+│ (LLM Generation)   │
+└─────────┬──────────┘
+          │
+          ▼
+┌────────────────────┐
+│ GitHub Commenter   │
+└────────────────────┘
+```
 
 ---
 
-## 🚀 Quick Start
+# 🛠️ Tech Stack
 
-### Prerequisites
-- Python 3.10+
-- GitHub Personal Access Token
-- LLM API Key (Groq / Gemini / OpenAI)
+| Layer | Technology |
+| --- | --- |
+| Backend | FastAPI, Uvicorn |
+| Vector Database | ChromaDB |
+| Embeddings | Sentence Transformers |
+| LLM | Groq / OpenAI |
+| Git Integration | GitPython |
+| HTTP Client | HTTPX |
+| Validation | Pydantic |
 
-### 1. Clone & Setup
+---
+
+# 📂 Project Structure
+
+```text
+src/
+├── main.py                  # FastAPI app + webhook endpoint
+├── models.py                # Pydantic schemas
+├── classifier.py            # Issue classification logic
+├── config.py                # Environment configuration
+│
+└── agents/
+    ├── repo_indexer.py      # Repository indexing + embeddings
+    ├── code_retriever.py    # Semantic retrieval (RAG)
+    ├── research_agent.py    # Research orchestration
+    ├── solution_agent.py    # AI fix generation
+    └── github_commentor.py  # Posts comment to GitHub
+
+tests/
+└── test_webhook.py
+```
+
+---
+
+# ⚡ Quick Start
+
+## 1️⃣ Clone Repository
 
 ```bash
 git clone https://github.com/yourusername/autonomous-issue-resolver.git
+
 cd autonomous-issue-resolver
+```
 
+---
+
+## 2️⃣ Create Virtual Environment
+
+```bash
 python3 -m venv venv
+
 source venv/bin/activate
+```
 
+---
+
+## 3️⃣ Install Dependencies
+
+```bash
 pip install -r requirements.txt
+```
 
-2. Configure Environment
+---
 
-cp .env.example .env
-# Edit .env with your keys
+## 4️⃣ Configure Environment Variables
 
+Create a `.env` file in the project root:
+
+```env
 # GitHub
-GITHUB_TOKEN=ghp_your_github_token_here
+GITHUB_TOKEN=your_github_token
 
-# LLM (Choose one)
-# Groq (Fast, Free Tier)
-OPENAI_API_KEY=gsk_your_groq_key
+# Groq / OpenAI Compatible APIs
+OPENAI_API_KEY=your_api_key
 OPENAI_BASE_URL=https://api.groq.com/openai/v1
+
+# LLM
 LLM_MODEL=llama3-8b-8192
 
-# OR Gemini
-# OPENAI_API_KEY=your_gemini_key
-# OPENAI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
-# LLM_MODEL=gemini-2.0-flash
-
-# OR OpenAI
-# OPENAI_API_KEY=sk-your-openai-key
-# OPENAI_BASE_URL=https://api.openai.com/v1
-# LLM_MODEL=gpt-4o-mini
-
+# App
 DEBUG=true
+```
 
-3. Run Server
+---
 
+# 🔑 Getting API Keys
+
+## Groq API Key
+
+1. Visit:
+   https://console.groq.com/keys
+
+2. Generate a new API key
+
+---
+
+## GitHub Token
+
+1. Open GitHub
+2. Go to:
+
+```text
+Settings → Developer Settings → Personal Access Tokens
+```
+
+3. Create a token with:
+
+```text
+repo permissions
+```
+
+---
+
+# ▶️ Run The Server
+
+```bash
 PYTHONPATH=src uvicorn src.main:app --reload --port 8000
+```
 
+Server starts at:
+
+```text
+http://127.0.0.1:8000
+```
+
+---
+
+# 🧪 Run Tests
+
+```bash
+python3 tests/test_webhook.py
+```
+
+---
+
+# 🔗 GitHub Webhook Setup
+
+Go to your repository:
+
+```text
+Repository → Settings → Webhooks → Add Webhook
+```
+
+Configure:
+
+| Setting | Value |
+| --- | --- |
+| Payload URL | `https://your-ngrok-url/webhook/github` |
+| Content Type | `application/json` |
+| Events | `Issues → Opened` |
+
+Save webhook.
+
+---
+
+# 🌐 Expose Localhost Using ngrok
+
+Install ngrok and run:
+
+```bash
+ngrok http 8000
+```
+
+Copy the generated HTTPS URL and use it in GitHub webhooks.
+
+Example:
+
+```text
+https://abc123.ngrok-free.app/webhook/github
+```
+
+---
+
+# 🧠 How The System Works
+
+| Step | Description |
+| --- | --- |
+| Parse | Extract issue title, body, labels |
+| Classify | Detect issue type |
+| Index | Clone and embed repository |
+| Search | Retrieve relevant code |
+| Generate | Produce AI fix suggestion |
+| Comment | Post response back to GitHub |
+
+---
+
+# 🧪 Example Workflow
+
+## GitHub Issue
+
+```text
+"App crashes when clicking login button"
+```
+
+## AI Investigation
+
+```text
+Type: BUG
+Priority: CRITICAL
+Confidence: 95%
+```
+
+## Retrieved Files
+
+```text
+src/components/LoginButton.js
+src/screens/AuthScreen.tsx
+```
+
+## Generated Response
+
+```text
+The issue is likely caused by a missing session null check
+before navigation logic executes.
+```
+
+## Result
+
+AI automatically comments on the GitHub issue.
+
+---
+
+# 📦 Example API Flow
+
+```text
+GitHub Issue
+    ↓
+Webhook Trigger
+    ↓
+Issue Classification
+    ↓
+Repository Indexing
+    ↓
+Semantic Search
+    ↓
+LLM Reasoning
+    ↓
+GitHub Comment Posted
+```
+
+---
+
+# 🔮 Future Improvements
+
+- [ ] Automatic PR generation
+- [ ] AI-generated code patches
+- [ ] Multi-repository support
+- [ ] Similar issue detection
+- [ ] Slack / Discord integration
+- [ ] Confidence-based auto-merge
+- [ ] Docker deployment
+- [ ] CI/CD support
+
+---
+
+# 🧹 Recommended `.gitignore`
+
+```gitignore
+# Python
+__pycache__/
+*.pyc
+venv/
+
+# Environment
+.env
+
+# VSCode
+.vscode/
+
+# macOS
+.DS_Store
+
+# ChromaDB
+data/chroma_db/
+```
+
+---
+
+# ⚠️ Important Security Note
+
+Never commit:
+
+- `.env`
+- API keys
+- GitHub tokens
+- `.pyc` files
+
+GitHub secret scanning will block pushes containing secrets.
+
+---
+
+# 👥 Team
+
+Built for hackathons and autonomous developer tooling experiments.
+
+---
+
+# 📜 License
+
+MIT License
