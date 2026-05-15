@@ -1,0 +1,60 @@
+{
+  "issues": [
+    {
+      "number": 42,
+      "title": "App crashes when clicking login button",
+      "type": "bug",
+      "solution_summary": "The when issue is caused by improper state handling in tests/test_webhook.py. Race condition or missing validation triggers this error.",
+      "files_modified": [
+        "tests/test_webhook.py",
+        "src/main.py",
+        "src/config.py"
+      ],
+      "repo": "user/my-app",
+      "timestamp": "2026-05-15T19:22:32.968547"
+    },
+    {
+      "number": 43,
+      "title": "Add dark mode support",
+      "type": "feature",
+      "solution_summary": "Implementing 'Add dark mode support' requires adding new module with state management and UI components.",
+      "files_modified": [
+        "src/classifier.py",
+        "src/config.py",
+        "src/models.py"
+      ],
+      "repo": "regencypatel/autonomous-issue-resolver",
+      "timestamp": "2026-05-15T19:22:32.984476"
+    },
+    {
+      "number": 44,
+      "title": "SQL Injection vulnerability in login endpoint",
+      "type": "security",
+      "solution_summary": "CRITICAL: SQL Injection vulnerability in login endpoint exposes the application to attacks. Input sanitization and access controls are missing.",
+      "files_modified": [
+        "tests/test_webhook.py",
+        "src/classifier.py",
+        "src/models.py"
+      ],
+      "repo": "user/my-app",
+      "timestamp": "2026-05-15T19:22:32.990484"
+    }
+  ],
+  "patterns": {
+    "bug": [
+      "crashes",
+      "clicking",
+      "login",
+      "button"
+    ],
+    "feature": [
+      "support"
+    ],
+    "security": [
+      "injection",
+      "vulnerability",
+      "login",
+      "endpoint"
+    ]
+  }
+}
