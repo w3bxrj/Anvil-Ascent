@@ -171,8 +171,4 @@ We welcome contributions! Whether it's a bug fix, a new agent idea, or documenta
 
 ---
 
-## 🛡️ License
-
-Distributed under the MIT License. See `LICENSE` for more information.
-
 ---
