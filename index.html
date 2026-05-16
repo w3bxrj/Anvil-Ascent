@@ -100,7 +100,6 @@
 
 <body class="bg-background text-on-surface font-inter min-h-screen">
 
-  <!-- Header -->
   <header class="fixed top-0 left-0 right-0 h-16 z-50 bg-background/60 backdrop-blur-xl border-b border-white/10">
     <div class="flex items-center justify-between px-6 h-full">
       <div class="flex items-center gap-8">
@@ -142,7 +141,6 @@
     </div>
   </header>
 
-  <!-- Sidebar -->
   <aside
     class="fixed left-0 top-0 h-full w-[280px] z-40 bg-surface-container-lowest/40 backdrop-blur-2xl border-r border-white/5 flex flex-col pt-20 px-4">
     <nav class="flex-1 space-y-1">
@@ -175,10 +173,8 @@
     </div>
   </aside>
 
-  <!-- Content -->
   <main class="ml-[280px] pt-24 px-10 pb-12">
 
-    <!-- View: Fleet Overview -->
     <section id="view-fleet" class="view-section active space-y-10">
       <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div class="glass-panel rounded-xl p-6 border-l-4 border-primary-container">
@@ -202,7 +198,7 @@
         <div class="lg:col-span-8 space-y-6">
           <h2 class="font-label-mono text-sm text-primary-container uppercase tracking-widest">Active Agents</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="agent-grid">
-            <!-- Agent Cards will be here -->
+
           </div>
         </div>
         <div class="lg:col-span-4 glass-panel rounded-xl flex flex-col h-[500px]">
@@ -217,7 +213,6 @@
       </section>
     </section>
 
-    <!-- View: Intelligence Center -->
     <section id="view-intelligence" class="view-section space-y-10">
       <div
         class="glass-panel rounded-2xl p-8 border-primary-container/20 min-h-[600px] relative overflow-hidden flex items-center justify-center">
@@ -232,7 +227,6 @@
       </div>
     </section>
 
-    <!-- View: Pipeline Architect -->
     <section id="view-pipeline" class="view-section space-y-10">
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div class="lg:col-span-9 glass-panel rounded-2xl p-12 min-h-[600px] flex items-center justify-center relative">
@@ -280,7 +274,6 @@
       </div>
     </section>
 
-    <!-- View: Trace Audit -->
     <section id="view-audit" class="view-section space-y-6">
       <div class="flex items-center justify-between">
         <h2 class="text-xl font-bold text-primary-container">Trace Audit Log</h2>
@@ -299,7 +292,7 @@
             </tr>
           </thead>
           <tbody id="trace-table-body" class="divide-y divide-white/5">
-            <!-- Table rows will be here -->
+
           </tbody>
         </table>
       </div>
