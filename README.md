@@ -159,7 +159,6 @@ Visit your [Omium Dashboard](https://omium.ai) to see the live traces.
 
 ---
 
-<<<<<<< HEAD
 ## 🤝 Contributing
 
 We welcome contributions! Whether it's a bug fix, a new agent idea, or documentation improvements.
@@ -189,5 +188,4 @@ We welcome contributions! Whether it's a bug fix, a new agent idea, or documenta
 4. Push to the branch (`git push origin feature/AmazingFeature`).
 5. Open a Pull Request.
 
->>>>>>> 6bfa262 (fix)
 ---
