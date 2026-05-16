@@ -4,7 +4,6 @@ Massive performance + architecture upgrade
 """
 
 import asyncio
-import omium
 from typing import List, Dict, Callable
 import time
 
@@ -13,7 +12,6 @@ class AsyncOrchestrator:
     Executes investigation tasks concurrently
     """
     
-    @omium.trace("parallel_execution")
     async def execute_parallel(self, tasks: List[Dict]) -> Dict:
         """
         tasks = [
@@ -46,7 +44,6 @@ class AsyncOrchestrator:
         
         return output
     
-    @omium.trace("run_async_task")
     async def _run_task(self, task: Dict):
         """Run single task with timeout"""
         func = task["func"]

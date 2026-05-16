@@ -1,4 +1,7 @@
-import omium
+"""
+Code Retriever: Semantic search over indexed repo
+"""
+
 from .repo_indexer import indexer
 from typing import List, Dict
 
@@ -8,7 +11,6 @@ class CodeRetriever:
     def __init__(self):
         self.indexer = indexer
     
-    @omium.trace("code_search")
     def search(self, repo_full_name: str, query: str, top_k: int = 5) -> List[Dict]:
         """
         Search repo for code relevant to query
@@ -38,7 +40,6 @@ class CodeRetriever:
         
         return formatted
     
-    @omium.trace("get_issue_context")
     def get_context_for_issue(self, repo_full_name: str, issue_title: str, 
                               issue_body: str, keywords: List[str]) -> Dict:
         """

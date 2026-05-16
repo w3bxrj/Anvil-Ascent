@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>SENTINEL | Autonomous Dashboard</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap"
+    rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+    rel="stylesheet" />
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "background": "#0c1324",
+            "surface": "#0c1324",
+            "primary-container": "#00f0ff",
+            "secondary": "#d0bcff",
+            "on-surface": "#dce1fb",
+            "on-surface-variant": "#b9cacb",
+            "surface-container-lowest": "#070d1f",
+            "surface-container-low": "#151b2d",
+            "surface-container": "#191f31",
+            "surface-container-high": "#23293c",
+            "surface-container-highest": "#2e3447",
+          },
+          fontFamily: {
+            "headline-lg": ["Inter"],
+            "label-mono": ["JetBrains Mono"],
+          }
+        },
+      },
+    }
+  </script>
+  <link rel="icon" type="image/png" href="/assets/logo.png">
+  <style>
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .btn-glow:hover {
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
+    }
+
+    .scanning-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to bottom, transparent 49.5%, rgba(0, 240, 255, 0.05) 50%, transparent 50.5%);
+      background-size: 100% 200%;
+      animation: scan 4s linear infinite;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    @keyframes scan {
+      from {
+        background-position: 0 0;
+      }
+
+      to {
+        background-position: 0 200%;
+      }
+    }
+
+    .shimmer-fill {
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      background-size: 200% 100%;
+      animation: shimmer 2s infinite;
+    }
+
+    @keyframes shimmer {
+      from {
+        background-position: -200% 0;
+      }
+
+      to {
+        background-position: 200% 0;
+      }
+    }
+
+    .view-section {
+      display: none;
+    }
+
+    .view-section.active {
+      display: block;
+    }
+  </style>
+</head>
+
+<body class="bg-background text-on-surface font-inter min-h-screen">
+
+  <!-- Header -->
+  <header class="fixed top-0 left-0 right-0 h-16 z-50 bg-background/60 backdrop-blur-xl border-b border-white/10">
+    <div class="flex items-center justify-between px-6 h-full">
+      <div class="flex items-center gap-8">
+        <div class="flex items-center gap-3">
+          <img src="/assets/logo.png" alt="Sentinel Logo"
+            class="w-8 h-8 rounded-lg shadow-[0_0_15px_rgba(0,240,255,0.4)]">
+          <span class="font-headline-lg text-primary-container tracking-wider font-black">SENTINEL</span>
+        </div>
+        <nav class="hidden md:flex gap-6">
+          <button onclick="showView('fleet')"
+            class="nav-link text-primary-container font-bold font-label-mono text-sm">Fleet Overview</button>
+          <button onclick="showView('intelligence')"
+            class="nav-link text-on-surface-variant hover:text-on-surface font-label-mono text-sm transition-colors">Intelligence
+            Center</button>
+          <button onclick="showView('pipeline')"
+            class="nav-link text-on-surface-variant hover:text-on-surface font-label-mono text-sm transition-colors">Pipeline
+            Architect</button>
+          <button onclick="showView('audit')"
+            class="nav-link text-on-surface-variant hover:text-on-surface font-label-mono text-sm transition-colors">Trace
+            Audit</button>
+        </nav>
+      </div>
+      <div class="flex items-center gap-4">
+        <button onclick="triggerSimulate()" id="simulate-btn"
+          class="flex items-center gap-2 bg-primary-container text-background px-4 py-1.5 rounded-full font-label-mono text-[12px] font-bold btn-glow transition-all active:scale-95">
+          <span class="material-symbols-outlined text-[18px]">play_circle</span>
+          <span>SIMULATE DEMO</span>
+        </button>
+        <div id="tracing-badge"
+          class="hidden items-center gap-2 bg-primary-container/10 rounded-full px-3 py-1 border border-primary-container/20">
+          <span class="material-symbols-outlined text-[14px] text-primary-container animate-pulse">analytics</span>
+          <span class="font-label-mono text-[10px] text-primary-container uppercase">Tracing Active</span>
+        </div>
+        <div class="flex items-center gap-2 bg-white/5 rounded-full px-4 py-1.5 border border-white/10">
+          <span class="material-symbols-outlined text-[18px] text-primary-container">terminal</span>
+          <span id="mode-badge" class="font-label-mono text-[12px] text-on-surface-variant">Autonomous Mode</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Sidebar -->
+  <aside
+    class="fixed left-0 top-0 h-full w-[280px] z-40 bg-surface-container-lowest/40 backdrop-blur-2xl border-r border-white/5 flex flex-col pt-20 px-4">
+    <nav class="flex-1 space-y-1">
+      <button onclick="showView('fleet')" id="side-fleet"
+        class="side-link w-full group flex items-center gap-3 px-4 py-3 rounded-lg bg-primary-container/10 text-primary-container border-r-2 border-primary-container transition-all">
+        <span class="material-symbols-outlined">hub</span>
+        <span class="font-label-mono text-sm">Fleet Overview</span>
+      </button>
+      <button onclick="showView('intelligence')" id="side-intelligence"
+        class="side-link w-full group flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant/60 hover:text-on-surface hover:bg-white/5 transition-all">
+        <span class="material-symbols-outlined">psychology</span>
+        <span class="font-label-mono text-sm">Intelligence Center</span>
+      </button>
+      <button onclick="showView('pipeline')" id="side-pipeline"
+        class="side-link w-full group flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant/60 hover:text-on-surface hover:bg-white/5 transition-all">
+        <span class="material-symbols-outlined">account_tree</span>
+        <span class="font-label-mono text-sm">Pipeline Architect</span>
+      </button>
+      <button onclick="showView('audit')" id="side-audit"
+        class="side-link w-full group flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant/60 hover:text-on-surface hover:bg-white/5 transition-all">
+        <span class="material-symbols-outlined">rule</span>
+        <span class="font-label-mono text-sm">Trace Audit</span>
+      </button>
+    </nav>
+    <div class="mt-auto px-4 pb-8">
+      <div class="pt-6 border-t border-white/5 flex items-center gap-3 text-on-surface-variant/40">
+        <span class="material-symbols-outlined text-[20px]">verified_user</span>
+        <span class="font-label-mono text-[12px]">System Verified</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Content -->
+  <main class="ml-[280px] pt-24 px-10 pb-12">
+
+    <!-- View: Fleet Overview -->
+    <section id="view-fleet" class="view-section active space-y-10">
+      <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="glass-panel rounded-xl p-6 border-l-4 border-primary-container">
+          <p class="font-label-mono text-xs text-on-surface-variant mb-1">Autonomous Completion Rate</p>
+          <h3 id="completion-rate" class="text-3xl font-bold text-primary-container">--%</h3>
+          <div class="mt-4 h-1 w-full bg-white/5 rounded-full overflow-hidden">
+            <div id="completion-bar" class="h-full bg-primary-container shimmer-fill" style="width: 0%"></div>
+          </div>
+        </div>
+        <div class="glass-panel rounded-xl p-6 border-l-4 border-secondary">
+          <p class="font-label-mono text-xs text-on-surface-variant mb-1">Active Traces</p>
+          <h3 id="active-traces" class="text-3xl font-bold text-secondary">0</h3>
+        </div>
+        <div class="glass-panel rounded-xl p-6 border-l-4 border-primary-fixed-dim">
+          <p class="font-label-mono text-xs text-on-surface-variant mb-1">Issues in Queue</p>
+          <h3 id="queue-size" class="text-3xl font-bold text-on-surface">0</h3>
+        </div>
+      </section>
+
+      <section class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div class="lg:col-span-8 space-y-6">
+          <h2 class="font-label-mono text-sm text-primary-container uppercase tracking-widest">Active Agents</h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="agent-grid">
+            <!-- Agent Cards will be here -->
+          </div>
+        </div>
+        <div class="lg:col-span-4 glass-panel rounded-xl flex flex-col h-[500px]">
+          <div class="p-4 border-b border-white/10 flex items-center justify-between">
+            <h3 class="font-label-mono text-sm">Live Activity Stream</h3>
+            <div class="w-2 h-2 rounded-full bg-primary-container animate-pulse"></div>
+          </div>
+          <div id="activity-stream" class="flex-1 overflow-y-auto p-4 space-y-4 font-label-mono text-xs">
+            <p class="text-on-surface-variant/40 italic">Awaiting events...</p>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <!-- View: Intelligence Center -->
+    <section id="view-intelligence" class="view-section space-y-10">
+      <div
+        class="glass-panel rounded-2xl p-8 border-primary-container/20 min-h-[600px] relative overflow-hidden flex items-center justify-center">
+        <div class="scanning-overlay"></div>
+        <div id="dynamic-reasoning-core"
+          class="w-full h-full flex flex-col items-center justify-center gap-8 z-10 text-center">
+          <span class="material-symbols-outlined text-6xl text-primary-container mb-4">psychology</span>
+          <h2 class="text-2xl font-bold text-primary-container">Investigation Core</h2>
+          <p class="text-on-surface-variant max-w-md">Real-time reasoning patterns will be visualized here as issues
+            flow through the pipeline.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- View: Pipeline Architect -->
+    <section id="view-pipeline" class="view-section space-y-10">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div class="lg:col-span-9 glass-panel rounded-2xl p-12 min-h-[600px] flex items-center justify-center relative">
+          <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,240,255,0.05)_0%,transparent_70%)]">
+          </div>
+          <div class="grid grid-cols-3 gap-12 z-10">
+            <div class="flex flex-col items-center gap-4">
+              <div
+                class="w-16 h-16 rounded-full border-2 border-primary-container flex items-center justify-center shadow-[0_0_20px_rgba(0,240,255,0.3)]">
+                <span class="material-symbols-outlined text-primary-container">assignment</span>
+              </div>
+              <span class="font-label-mono text-xs">PLANNER</span>
+            </div>
+            <div class="flex flex-col items-center gap-4">
+              <div class="w-16 h-16 rounded-full border-2 border-secondary flex items-center justify-center">
+                <span class="material-symbols-outlined text-secondary">search</span>
+              </div>
+              <span class="font-label-mono text-xs">RESEARCH</span>
+            </div>
+            <div class="flex flex-col items-center gap-4">
+              <div class="w-16 h-16 rounded-full border-2 border-primary-container flex items-center justify-center">
+                <span class="material-symbols-outlined text-primary-container">auto_fix_high</span>
+              </div>
+              <span class="font-label-mono text-xs">SOLUTION</span>
+            </div>
+          </div>
+        </div>
+        <aside class="lg:col-span-3 glass-panel rounded-2xl p-6">
+          <h3 class="font-label-mono text-sm mb-6 text-primary-container">System Config</h3>
+          <div class="space-y-4">
+            <div class="p-3 bg-white/5 rounded border border-white/10">
+              <p class="text-[10px] text-on-surface-variant uppercase mb-1">LLM Model</p>
+              <p class="font-label-mono text-sm">llama-3.1-70b</p>
+            </div>
+            <div class="p-3 bg-white/5 rounded border border-white/10">
+              <p class="text-[10px] text-on-surface-variant uppercase mb-1">Search Mode</p>
+              <p class="font-label-mono text-sm">Semantic RAG</p>
+            </div>
+          </div>
+          <div
+            class="mt-12 p-4 rounded border border-primary-container/20 text-[10px] font-label-mono text-on-surface-variant text-center">
+            ARCHITECTURE READ-ONLY
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- View: Trace Audit -->
+    <section id="view-audit" class="view-section space-y-6">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xl font-bold text-primary-container">Trace Audit Log</h2>
+        <span class="font-label-mono text-xs text-on-surface-variant uppercase">Verifiable Records</span>
+      </div>
+      <div class="glass-panel rounded-xl overflow-hidden">
+        <table class="w-full text-left">
+          <thead class="bg-white/5 border-b border-white/10">
+            <tr>
+              <th class="px-6 py-4 font-label-mono text-[10px] text-on-surface-variant uppercase">Trace ID</th>
+              <th class="px-6 py-4 font-label-mono text-[10px] text-on-surface-variant uppercase">Action</th>
+              <th class="px-6 py-4 font-label-mono text-[10px] text-on-surface-variant uppercase">Issue Title</th>
+              <th class="px-6 py-4 font-label-mono text-[10px] text-on-surface-variant uppercase">Latency</th>
+              <th class="px-6 py-4 text-right font-label-mono text-[10px] text-on-surface-variant uppercase">Details
+              </th>
+            </tr>
+          </thead>
+          <tbody id="trace-table-body" class="divide-y divide-white/5">
+            <!-- Table rows will be here -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    const views = ['fleet', 'intelligence', 'pipeline', 'audit'];
+
+    async function triggerSimulate() {
+      const btn = document.getElementById('simulate-btn');
+      const originalContent = btn.innerHTML;
+      try {
+        btn.disabled = true;
+        btn.innerHTML = `<span class="material-symbols-outlined text-[18px] animate-spin">refresh</span><span>TRIGGERING...</span>`;
+        const res = await fetch('/simulate', { method: 'POST' });
+        const data = await res.json();
+        console.log('Simulation triggered:', data);
+        setTimeout(() => {
+          btn.innerHTML = `<span class="material-symbols-outlined text-[18px]">check_circle</span><span>TRIGGERED</span>`;
+          setTimeout(() => {
+            btn.innerHTML = originalContent;
+            btn.disabled = false;
+          }, 2000);
+        }, 1000);
+      } catch (e) {
+        console.error(e);
+        btn.innerHTML = originalContent;
+        btn.disabled = false;
+      }
+    }
+
+    function showView(viewId) {
+      views.forEach(v => {
+        document.getElementById(`view-${v}`).classList.remove('active');
+        const sideLink = document.getElementById(`side-${v}`);
+        if (sideLink) {
+          sideLink.classList.remove('bg-primary-container/10', 'text-primary-container', 'border-r-2', 'border-primary-container');
+          sideLink.classList.add('text-on-surface-variant/60');
+        }
+      });
+
+      document.getElementById(`view-${viewId}`).classList.add('active');
+      const activeLink = document.getElementById(`side-${viewId}`);
+      if (activeLink) {
+        activeLink.classList.add('bg-primary-container/10', 'text-primary-container', 'border-r-2', 'border-primary-container');
+        activeLink.classList.remove('text-on-surface-variant/60');
+      }
+    }
+
+    async function updateDashboard() {
+      try {
+        const statusRes = await fetch('/status');
+        const data = await statusRes.json();
+        const queueRes = await fetch('/queue');
+        const queueData = await queueRes.json();
+        const latest = data.latest_investigation;
+
+        // Metrics & Status Badges
+        document.getElementById('completion-rate').innerText = data.metrics.success_rate + '%';
+        document.getElementById('completion-bar').style.width = data.metrics.success_rate + '%';
+        document.getElementById('active-traces').innerText = data.metrics.total;
+        document.getElementById('queue-size').innerText = data.metrics.queue;
+
+        // Update Status Badges
+        const modeBadge = document.getElementById('mode-badge');
+        modeBadge.innerText = `Autonomous Mode (${data.llm_mode})`;
+        modeBadge.classList.toggle('text-primary-container', data.llm_mode === 'LIVE');
+
+        const tracingBadge = document.getElementById('tracing-badge');
+        if (data.omium_tracing) {
+          tracingBadge.classList.remove('hidden');
+          tracingBadge.classList.add('flex');
+        } else {
+          tracingBadge.classList.add('hidden');
+          tracingBadge.classList.remove('flex');
+        }
+
+        // Activity Stream
+        const stream = document.getElementById('activity-stream');
+        if (queueData.recent_issues) {
+          stream.innerHTML = '';
+          [...queueData.recent_issues].reverse().forEach(issue => {
+            const entry = document.createElement('div');
+            entry.className = 'flex gap-3 items-start border-l border-primary-container/20 pl-3 py-1';
+            const color = issue.status === 'proceed' ? 'text-primary-container' : 'text-secondary';
+            entry.innerHTML = `<span class="text-on-surface-variant/40 text-[9px] mt-1">${new Date().toLocaleTimeString()}</span>
+              <p><span class="${color}">[#${issue.issue_number}]</span> ${issue.status.toUpperCase()}: ${issue.classification.title}</p>`;
+            stream.appendChild(entry);
+          });
+        }
+
+        // Trace Table
+        const table = document.getElementById('trace-table-body');
+        if (queueData.recent_issues) {
+          table.innerHTML = '';
+          [...queueData.recent_issues].reverse().forEach(issue => {
+            const row = document.createElement('tr');
+            row.className = 'hover:bg-white/5 transition-colors text-xs font-label-mono';
+            const statusClass = issue.status === 'proceed' ? 'text-primary-container bg-primary-container/10' : 'text-secondary bg-secondary/10';
+            row.innerHTML = `
+              <td class="px-6 py-4">T-${issue.issue_number}</td>
+              <td class="px-6 py-4"><span class="px-2 py-0.5 rounded ${statusClass}">${issue.status}</span></td>
+              <td class="px-6 py-4 text-on-surface-variant">${issue.classification.title}</td>
+              <td class="px-6 py-4 text-on-surface-variant">${issue.pipeline_time}s</td>
+              <td class="px-6 py-4 text-right"><span class="material-symbols-outlined text-sm">visibility</span></td>
+            `;
+            table.appendChild(row);
+          });
+        }
+
+        // Intelligence
+        if (latest) {
+          document.getElementById('dynamic-reasoning-core').innerHTML = `
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full text-left">
+              <div class="glass-panel p-6 rounded-xl">
+                <h4 class="text-primary-container font-label-mono text-xs mb-4">PLANNER STRATEGY</h4>
+                <p class="text-sm mb-4">${latest.plan.reasoning}</p>
+                <div class="flex flex-wrap gap-2">
+                  ${latest.plan.primary_tasks.map(t => `<span class="px-2 py-1 bg-white/5 rounded text-[10px]">${t}</span>`).join('')}
+                </div>
+              </div>
+              <div class="glass-panel p-6 rounded-xl">
+                <h4 class="text-secondary font-label-mono text-xs mb-4">HYPOTHESIS</h4>
+                <p class="text-sm mb-4">${latest.hypothesis.theory}</p>
+                <div class="flex items-center justify-between border-t border-white/5 pt-4 mt-auto">
+                   <span class="text-[10px]">Confidence: ${latest.hypothesis.confidence}%</span>
+                   <div class="h-1 w-20 bg-white/10 rounded-full overflow-hidden"><div class="h-full bg-secondary" style="width:${latest.hypothesis.confidence}%"></div></div>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
+        // Agent Grid
+        const grid = document.getElementById('agent-grid');
+        grid.innerHTML = data.agents.map(agent => `
+          <div class="glass-panel p-4 rounded-xl flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-2 h-2 rounded-full bg-primary-container shadow-[0_0_8px_rgba(0,240,255,0.6)]"></div>
+              <span class="font-label-mono text-xs">${agent.name}</span>
+            </div>
+            <span class="text-[9px] font-label-mono text-on-surface-variant/40 uppercase">Running</span>
+          </div>
+        `).join('');
+
+      } catch (e) { console.error(e); }
+    }
+
+    updateDashboard();
+    setInterval(updateDashboard, 5000);
+  </script>
+</body>
+
+</html>

@@ -14,22 +14,43 @@ import hashlib
 import json
 import asyncio
 import time
-from typing import Optional, List, Dict
-from fastapi import FastAPI, Request, Header, HTTPException, BackgroundTasks
-from fastapi.responses import JSONResponse
 import omium
-from contextlib import asynccontextmanager
-
-# Initialize Omium
-omium.init()
+from datetime import datetime
+from typing import Optional, List, Dict
+from pathlib import Path
+from dotenv import load_dotenv
 
 # Ensure src is in path for imports
 sys.path.insert(0, str(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
+# LOAD ENVIRONMENT FIRST
+env_path = Path(__file__).parent.parent / ".env"
+load_dotenv(dotenv_path=str(env_path), override=True)
 
 # Core models & config
 from src.models import IssuePayload, ParsedIssue, IssueType, Priority
 from src.classifier import classifier
 from src.config import settings
+
+# Initialize Omium Tracing (Optional)
+omium_key = os.getenv("OMIUM_API_KEY")
+if omium_key and omium_key != "your_omium_key_here":
+    try:
+        # 'project' helps group runs in the Omium dashboard
+        omium.init(
+            api_key=omium_key,
+            project="Sentinel-Autonomous-Resolver"
+        )
+        print("🔍 Omium Tracing: ENABLED (Project: Sentinel-Autonomous-Resolver)")
+    except Exception as e:
+        print(f"⚠️ Omium Init Failed: {e}")
+else:
+    print("🔍 Omium Tracing: DISABLED (Key missing)")
+
+from fastapi import FastAPI, Request, Header, HTTPException, BackgroundTasks
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
+from contextlib import asynccontextmanager
 
 # AGENT IMPORTS — All 8 agents
 from src.agents.planner_agent import planner, InvestigationType
@@ -64,6 +85,10 @@ async def lifespan(app: FastAPI):
     yield
     print(f"\n{'='*70}")
     print(f"👋 Server shutting down...")
+    
+    # The Omium SDK handles trace transmission automatically
+    # as long as the process exits gracefully.
+
     print(f"   Total processed: {metrics['total_processed']}")
     print(f"   Auto-resolved: {metrics['auto_resolved']}")
     print(f"   Escalated: {metrics['escalated']}")
@@ -75,6 +100,87 @@ app = FastAPI(
     version="2.0.0",
     lifespan=lifespan
 )
+
+# Project root and UI file
+root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+index_path = os.path.join(root_path, "index.html")
+
+# Mount assets
+app.mount("/assets", StaticFiles(directory=os.path.join(root_path, "assets")), name="assets")
+
+@app.get("/", response_class=FileResponse)
+async def serve_home():
+    return FileResponse(index_path)
+
+@app.get("/intelligence", response_class=FileResponse)
+async def serve_intelligence():
+    return FileResponse(index_path)
+
+@app.get("/pipeline", response_class=FileResponse)
+async def serve_pipeline():
+    return FileResponse(index_path)
+
+@app.get("/audit", response_class=FileResponse)
+async def serve_audit():
+    return FileResponse(index_path)
+
+@app.get("/status")
+async def get_system_status():
+    """Detailed system status for UI"""
+    latest_issue = processing_queue[-1] if processing_queue else None
+    
+    # Check tracing status
+    tracing_active = False
+    try:
+        tracing_active = omium_key and omium_key != "your_omium_key_here"
+    except:
+        pass
+
+    return {
+        "metrics": {
+            "total": metrics['total_processed'],
+            "success_rate": round((metrics['auto_resolved'] / metrics['total_processed'] * 100) if metrics['total_processed'] > 0 else 0, 1),
+            "queue": len(processing_queue)
+        },
+        "latest_investigation": latest_issue,
+        "omium_tracing": tracing_active,
+        "llm_mode": "LIVE" if settings.OPENAI_API_KEY else "MOCK",
+        "agents": [
+            {"id": "planner", "name": "Strategic Planner", "status": "online"},
+            {"id": "research", "name": "Code Research", "status": "online"},
+            {"id": "hypothesis", "name": "Hypothesis Engine", "status": "online"},
+            {"id": "solution", "name": "Solution Forge", "status": "online"},
+            {"id": "critic", "name": "Quality Critic", "status": "online"},
+            {"id": "memory", "name": "Experience Memory", "status": "online"}
+        ]
+    }
+
+@app.post("/simulate")
+async def simulate_issue(background_tasks: BackgroundTasks):
+    """Trigger a demo issue for UI testing"""
+    now = datetime.now()
+    sample_issue = ParsedIssue(
+        id=int(time.time()),
+        number=int(time.time()) % 10000,
+        title="CRITICAL: Memory leak in worker orchestration loop",
+        body="Users are reporting that worker nodes are crashing after 4 hours of heavy load. Investigation suggests a leak in the task queue cleanup logic.",
+        state="open",
+        labels=["bug", "high-priority"],
+        author="demo-user",
+        created_at=now,
+        updated_at=now,
+        url="https://github.com/sentinel/core-pipeline/issues/1",
+        repo_name="core-pipeline",
+        repo_full_name="sentinel/core-pipeline",
+        issue_type=IssueType.BUG,
+        priority=Priority.CRITICAL
+    )
+    
+    # Capture current trace context to propagate to background task
+    exec_id = omium.get_execution_id()
+    background_tasks.add_task(process_issue_async, sample_issue, exec_id)
+    
+    return {"message": "Demo investigation triggered", "issue_number": sample_issue.number}
 
 # =============================================================================
 # HELPER FUNCTIONS
@@ -130,244 +236,241 @@ def parse_issue_payload(payload: dict) -> ParsedIssue:
 # CORE PIPELINE — Multi-Agent Orchestration
 # =============================================================================
 
-@omium.trace("issue_resolution_pipeline")
-async def process_issue_async(parsed: ParsedIssue):
+# Manual tracing for background tasks to prevent PENDING status
+async def process_issue_async(parsed: ParsedIssue, execution_id: str = None):
     """
     FULL MULTI-AGENT PIPELINE
     =========================
-    1. PLANNER: Decide investigation strategy
-    2. ASYNC ORCHESTRATOR: Execute tasks in parallel
-    3. RESEARCH: RAG-based code retrieval
-    4. HYPOTHESIS: Generate & test root cause theories
-    5. SOLUTION: LLM-powered fix generation
-    6. CRITIC: Validate solution quality
-    7. DECISION: Execute, Escalate, or Caution
-    8. MEMORY: Store for future learning
+    Ensures Omium spans are finished by using a manual context manager
+    and explicit context propagation for background tasks.
     """
-    pipeline_start = time.time()
+    if execution_id:
+        omium.set_execution_id(execution_id)
+
+    async with omium.Checkpoint("main_orchestration_pipeline") as cp:
+        try:
+            pipeline_start = time.time()
     
-    print(f"\n{'='*70}")
-    print(f"🔔 ISSUE #{parsed.number}: {parsed.title[:60]}...")
-    print(f"{'='*70}")
-    print(f"   Repo: {parsed.repo_full_name}")
-    print(f"   Type: {parsed.issue_type.value.upper()} | Priority: {parsed.priority.value.upper()}")
-    print(f"   Classification Confidence: {parsed.confidence_score*100:.0f}%")
-    print(f"   Keywords: {', '.join(parsed.extracted_keywords[:5])}")
-    
-    # =========================================================================
-    # STEP 1: PLANNER AGENT — Decide Strategy
-    # =========================================================================
-    print(f"\n📋 [1/8] PLANNER: Deciding investigation strategy...")
-    
-    plan = planner.plan_investigation(
-        issue_title=parsed.title,
-        issue_body=parsed.body or "",
-        issue_type=parsed.issue_type.value,
-        priority=parsed.priority.value,
-        keywords=parsed.extracted_keywords
-    )
-    
-    print(f"   Strategy: {plan['reasoning']}")
-    print(f"   Primary tasks: {[t.value for t in plan['primary_tasks']]}")
-    print(f"   Secondary tasks: {[t.value for t in plan['secondary_tasks']]}")
-    print(f"   Estimated time: {plan['estimated_time']}")
-    
-    # =========================================================================
-    # STEP 2: ASYNC ORCHESTRATOR — Parallel Execution
-    # =========================================================================
-    print(f"\n⚡ [2/8] ASYNC ORCHESTRATOR: Executing {len(plan['primary_tasks'])} tasks in parallel...")
-    
-    local_repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    
-    # Build parallel tasks
-    parallel_tasks = []
-    
-    # Always: Index/Search repo
-    parallel_tasks.append({
-        "name": "research_repo",
-        "func": research_agent.investigate,
-        "args": [],
-        "kwargs": {
-            "repo_full_name": parsed.repo_full_name,
-            "issue_title": parsed.title,
-            "issue_body": parsed.body or "",
-            "keywords": parsed.extracted_keywords,
-            "local_path": local_repo_path
-        },
-        "timeout": 45
-    })
-    
-    # Always: Check memory for similar issues
-    parallel_tasks.append({
-        "name": "check_memory",
-        "func": memory.find_similar_past_issues,
-        "args": [parsed.title, parsed.issue_type.value, parsed.repo_full_name],
-        "kwargs": {},
-        "timeout": 5
-    })
-    
-    # Conditional: Search docs (if in plan)
-    if InvestigationType.DOCS_CHECK in plan['primary_tasks']:
-        parallel_tasks.append({
-            "name": "search_docs",
-            "func": _mock_search_docs,  # Placeholder for real implementation
-            "args": [parsed.repo_full_name, parsed.extracted_keywords],
-            "kwargs": {},
-            "timeout": 10
-        })
-    
-    # Execute all in parallel
-    parallel_results = await orchestrator.execute_parallel(parallel_tasks)
-    exec_time = parallel_results.get('execution_time', 0)
-    
-    print(f"   ⏱️  Parallel execution: {exec_time}s")
-    print(f"   Tasks completed: {parallel_results['parallel_tasks']}")
-    
-    # Extract results
-    research_result = parallel_results.get('research_repo', {}).get('data', {})
-    similar_issues = parallel_results.get('check_memory', {}).get('data', [])
-    
-    if not research_result or research_result.get('status') != 'success':
-        print(f"   ❌ Research failed — falling back to basic mode")
-        await _handle_research_failure(parsed)
-        return
-    
-    print(f"   📚 Research: {research_result['context']['total_files_found']} files found")
-    
-    if similar_issues:
-        print(f"   🧠 Memory: {len(similar_issues)} similar past issues detected!")
-        for si in similar_issues[:2]:
-            print(f"      → #{si['issue']['number']}: {si['issue']['title'][:40]}... (score: {si['similarity_score']:.2f})")
-    
-    # =========================================================================
-    # STEP 3: HYPOTHESIS AGENT — Root Cause Reasoning
-    # =========================================================================
-    print(f"\n🧠 [3/8] HYPOTHESIS: Generating & testing root cause theories...")
-    
-    hypotheses = hypothesis_agent.generate_hypotheses(
-        issue_title=parsed.title,
-        issue_body=parsed.body or "",
-        keywords=parsed.extracted_keywords,
-        research_files=research_result.get('files', [])
-    )
-    
-    best = hypotheses['best_hypothesis']
-    print(f"   Best theory: {best['theory'][:70]}...")
-    print(f"   Theory confidence: {best['confidence']}%")
-    print(f"   Evidence files: {len(best['evidence'])}")
-    
-    # =========================================================================
-    # STEP 4: SOLUTION AGENT — Generate Fix
-    # =========================================================================
-    print(f"\n🤖 [4/8] SOLUTION: Generating fix via LLM ({settings.LLM_MODEL})...")
-    
-    # Enhance prompt with hypothesis context
-    enhanced_context = research_result['files'] + [{
-        'file_path': 'HYPOTHESIS',
-        'content': f"Leading theory: {best['theory']}\nConfidence: {best['confidence']}%",
-        'relevance_score': 1.0
-    }]
-    
-    solution_result = await solution_agent.generate_solution(
-        issue_title=parsed.title,
-        issue_body=parsed.body or "",
-        issue_type=parsed.issue_type.value,
-        priority=parsed.priority.value,
-        keywords=parsed.extracted_keywords,
-        research_files=enhanced_context
-    )
-    
-    if solution_result["status"] != "success":
-        print(f"   ❌ LLM generation failed — escalating to human")
-        await _escalate_to_human(parsed, "LLM generation failed")
-        return
-    
-    print(f"   ✅ Solution generated")
-    print(f"   Analysis: {solution_result['analysis'][:80]}...")
-    print(f"   Raw confidence: {solution_result['confidence']}%")
-    
-    # =========================================================================
-    # STEP 5: CRITIC AGENT — Validate Quality
-    # =========================================================================
-    print(f"\n🔍 [5/8] CRITIC: Validating solution quality...")
-    
-    critic_result = critic.evaluate(
-        solution=solution_result,
-        research_files=research_result.get('files', []),
-        issue_title=parsed.title,
-        issue_body=parsed.body or ""
-    )
-    
-    scores = critic_result['scores']
-    print(f"   Code relevance: {scores['code_relevance']:.0f}%")
-    print(f"   Confidence calib: {scores['confidence_calibration']:.0f}%")
-    print(f"   Contradiction: {scores['contradiction_check']:.0f}%")
-    print(f"   OVERALL: {scores['overall']:.0f}% → VERDICT: {critic_result['verdict']}")
-    
-    # Use corrected solution (critic may have adjusted confidence)
-    final_solution = critic_result['corrected_solution']
-    
-    # =========================================================================
-    # STEP 6: DECISION — Execute, Escalate, or Caution
-    # =========================================================================
-    print(f"\n⚖️  [6/8] DECISION: {critic_result['action'].upper()}")
-    
-    if critic_result['action'] == "proceed":
-        # HIGH CONFIDENCE → Full auto: Comment + Draft PR suggestion
-        await _execute_full(parsed, final_solution, research_result, critic_result)
-        
-    elif critic_result['action'] == "proceed_with_caution":
-        # MEDIUM CONFIDENCE → Comment with warning
-        await _execute_with_caution(parsed, final_solution)
-        
-    else:
-        # LOW CONFIDENCE → Escalate to human
-        await _escalate_to_human(parsed, f"Critic score too low: {scores['overall']:.0f}%")
-    
-    # =========================================================================
-    # STEP 7: MEMORY — Store for Learning
-    # =========================================================================
-    print(f"\n💾 [7/8] MEMORY: Storing issue pattern...")
-    
-    memory.remember_issue(
-        issue_number=parsed.number,
-        title=parsed.title,
-        issue_type=parsed.issue_type.value,
-        solution=final_solution,
-        repo=parsed.repo_full_name
-    )
-    
-    # Get pattern insight
-    insight = memory.get_pattern_insight(parsed.issue_type.value)
-    if insight:
-        print(f"   Pattern insight: {insight}")
-    
-    # =========================================================================
-    # STEP 8: METRICS — Pipeline Complete
-    # =========================================================================
-    total_time = round(time.time() - pipeline_start, 2)
-    metrics['total_processed'] += 1
-    
-    print(f"\n✅ [8/8] PIPELINE COMPLETE in {total_time}s")
-    print(f"{'='*70}\n")
-    
-    # Store in queue
-    processing_queue.append({
-        "issue_number": parsed.number,
-        "status": critic_result['action'],
-        "pipeline_time": total_time,
-        "classification": parsed.to_processing_context(),
-        "plan": plan,
-        "hypothesis": hypotheses['best_hypothesis'],
-        "critic_scores": scores,
-        "solution": final_solution
-    })
+            print(f"\n{'='*70}")
+            print(f"🔔 ISSUE #{parsed.number}: {parsed.title[:60]}...")
+            print(f"{'='*70}")
+            print(f"   Repo: {parsed.repo_full_name}")
+            print(f"   Type: {parsed.issue_type.upper() if isinstance(parsed.issue_type, str) else parsed.issue_type.value.upper()} | Priority: {parsed.priority.upper() if isinstance(parsed.priority, str) else parsed.priority.value.upper()}")
+            print(f"   Classification Confidence: {parsed.confidence_score*100:.0f}%")
+            print(f"   Keywords: {', '.join(parsed.extracted_keywords[:5])}")
+            
+            # =========================================================================
+            # STEP 1: PLANNER AGENT — Decide Strategy
+            # =========================================================================
+            print(f"\n📋 [1/8] PLANNER: Deciding investigation strategy...")
+            
+            plan = planner.plan_investigation(
+                issue_title=parsed.title,
+                issue_body=parsed.body or "",
+                issue_type=parsed.issue_type if isinstance(parsed.issue_type, str) else parsed.issue_type.value,
+                priority=parsed.priority if isinstance(parsed.priority, str) else parsed.priority.value,
+                keywords=parsed.extracted_keywords
+            )
+            
+            print(f"   Strategy: {plan['reasoning']}")
+            print(f"   Primary tasks: {[t.value if hasattr(t, 'value') else t for t in plan['primary_tasks']]}")
+            print(f"   Secondary tasks: {[t.value if hasattr(t, 'value') else t for t in plan['secondary_tasks']]}")
+            print(f"   Estimated time: {plan['estimated_time']}")
+            
+            # =========================================================================
+            # STEP 2: ASYNC ORCHESTRATOR — Parallel Execution
+            # =========================================================================
+            print(f"\n⚡ [2/8] ASYNC ORCHESTRATOR: Executing {len(plan['primary_tasks'])} tasks in parallel...")
+            
+            local_repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            
+            # Build parallel tasks
+            parallel_tasks = []
+            
+            # Always: Index/Search repo
+            parallel_tasks.append({
+                "name": "research_repo",
+                "func": research_agent.investigate,
+                "args": [],
+                "kwargs": {
+                    "repo_full_name": parsed.repo_full_name,
+                    "issue_title": parsed.title,
+                    "issue_body": parsed.body or "",
+                    "keywords": parsed.extracted_keywords,
+                    "local_path": local_repo_path
+                },
+                "timeout": 45
+            })
+            
+            # Always: Check memory for similar issues
+            parallel_tasks.append({
+                "name": "check_memory",
+                "func": memory.find_similar_past_issues,
+                "args": [parsed.title, parsed.issue_type if isinstance(parsed.issue_type, str) else parsed.issue_type.value, parsed.repo_full_name],
+                "kwargs": {},
+                "timeout": 5
+            })
+            
+            # Execute all in parallel
+            parallel_results = await orchestrator.execute_parallel(parallel_tasks)
+            exec_time = parallel_results.get('execution_time', 0)
+            
+            print(f"   ⏱️  Parallel execution: {exec_time}s")
+            print(f"   Tasks completed: {parallel_results['parallel_tasks']}")
+            
+            # Extract results
+            research_result = parallel_results.get('research_repo', {}).get('data', {})
+            similar_issues = parallel_results.get('check_memory', {}).get('data', [])
+            
+            if not research_result or research_result.get('status') != 'success':
+                print(f"   ❌ Research failed — falling back to basic mode")
+                await _handle_research_failure(parsed)
+                return
+            
+            print(f"   📚 Research: {research_result['context']['total_files_found']} files found")
+            
+            if similar_issues:
+                print(f"   🧠 Memory: {len(similar_issues)} similar past issues detected!")
+                for si in similar_issues[:2]:
+                    print(f"      → #{si['issue']['number']}: {si['issue']['title'][:40]}... (score: {si['similarity_score']:.2f})")
+            
+            # =========================================================================
+            # STEP 3: HYPOTHESIS AGENT — Root Cause Reasoning
+            # =========================================================================
+            print(f"\n🧠 [3/8] HYPOTHESIS: Generating & testing root cause theories...")
+            
+            hypotheses = hypothesis_agent.generate_hypotheses(
+                issue_title=parsed.title,
+                issue_body=parsed.body or "",
+                keywords=parsed.extracted_keywords,
+                research_files=research_result.get('files', [])
+            )
+            
+            best = hypotheses['best_hypothesis']
+            print(f"   Best theory: {best['theory'][:70]}...")
+            print(f"   Theory confidence: {best['confidence']}%")
+            print(f"   Evidence files: {len(best['evidence'])}")
+            
+            # =========================================================================
+            # STEP 4: SOLUTION AGENT — Generate Fix
+            # =========================================================================
+            print(f"\n🤖 [4/8] SOLUTION: Generating fix via LLM ({settings.LLM_MODEL})...")
+            
+            # Enhance prompt with hypothesis context
+            enhanced_context = research_result['files'] + [{
+                'file_path': 'HYPOTHESIS',
+                'content': f"Leading theory: {best['theory']}\nConfidence: {best['confidence']}%",
+                'relevance_score': 1.0
+            }]
+            
+            solution_result = await solution_agent.generate_solution(
+                issue_title=parsed.title,
+                issue_body=parsed.body or "",
+                issue_type=parsed.issue_type if isinstance(parsed.issue_type, str) else parsed.issue_type.value,
+                priority=parsed.priority if isinstance(parsed.priority, str) else parsed.priority.value,
+                keywords=parsed.extracted_keywords,
+                research_files=enhanced_context
+            )
+            
+            if solution_result["status"] != "success":
+                print(f"   ❌ LLM generation failed — escalating to human")
+                await _escalate_to_human(parsed, "LLM generation failed")
+                return
+            
+            print(f"   ✅ Solution generated")
+            print(f"   Analysis: {solution_result['analysis'][:80]}...")
+            print(f"   Raw confidence: {solution_result['confidence']}%")
+            
+            # =========================================================================
+            # STEP 5: CRITIC AGENT — Validate Quality
+            # =========================================================================
+            print(f"\n🔍 [5/8] CRITIC: Validating solution quality...")
+            
+            critic_result = critic.evaluate(
+                solution=solution_result,
+                research_files=research_result.get('files', []),
+                issue_title=parsed.title,
+                issue_body=parsed.body or ""
+            )
+            
+            scores = critic_result['scores']
+            print(f"   Code relevance: {scores['code_relevance']:.0f}%")
+            print(f"   Confidence calib: {scores['confidence_calibration']:.0f}%")
+            print(f"   Contradiction: {scores['contradiction_check']:.0f}%")
+            print(f"   OVERALL: {scores['overall']:.0f}% → VERDICT: {critic_result['verdict']}")
+            
+            # Use corrected solution (critic may have adjusted confidence)
+            final_solution = critic_result['corrected_solution']
+            
+            # =========================================================================
+            # STEP 6: DECISION — Execute, Escalate, or Caution
+            # =========================================================================
+            print(f"\n⚖️  [6/8] DECISION: {critic_result['action'].upper()}")
+            
+            if critic_result['action'] == "proceed":
+                # HIGH CONFIDENCE → Full auto: Comment + Draft PR suggestion
+                await _execute_full(parsed, final_solution, research_result, critic_result)
+                
+            elif critic_result['action'] == "proceed_with_caution":
+                # MEDIUM CONFIDENCE → Comment with warning
+                await _execute_with_caution(parsed, final_solution)
+                
+            else:
+                # LOW CONFIDENCE → Escalate to human
+                await _escalate_to_human(parsed, f"Critic score too low: {scores['overall']:.0f}%")
+            
+            # =========================================================================
+            # STEP 7: MEMORY — Store for Learning
+            # =========================================================================
+            print(f"\n💾 [7/8] MEMORY: Storing issue pattern...")
+            
+            memory.remember_issue(
+                issue_number=parsed.number,
+                title=parsed.title,
+                issue_type=parsed.issue_type if isinstance(parsed.issue_type, str) else parsed.issue_type.value,
+                solution=final_solution,
+                repo=parsed.repo_full_name
+            )
+            
+            # Get pattern insight
+            insight = memory.get_pattern_insight(parsed.issue_type if isinstance(parsed.issue_type, str) else parsed.issue_type.value)
+            if insight:
+                print(f"   Pattern insight: {insight}")
+            
+            # =========================================================================
+            # STEP 8: METRICS — Pipeline Complete
+            # =========================================================================
+            total_time = round(time.time() - pipeline_start, 2)
+            metrics['total_processed'] += 1
+            
+            print(f"\n✅ [8/8] PIPELINE COMPLETE in {total_time}s")
+            print(f"{'='*70}\n")
+            
+            # Store in queue
+            processing_queue.append({
+                "issue_number": parsed.number,
+                "status": critic_result['action'],
+                "pipeline_time": total_time,
+                "classification": parsed.to_processing_context(),
+                "plan": plan,
+                "hypothesis": hypotheses['best_hypothesis'],
+                "critic_scores": scores,
+                "solution": final_solution
+            })
+            
+            # Mark checkpoint as complete
+            cp.update_state(status="completed", total_time=total_time)
+
+        except Exception as e:
+            print(f"❌ Pipeline Error: {e}")
+            # cp.__aexit__ will handle the span closing
+            raise e
 
 # =============================================================================
 # DECISION HANDLERS
 # =============================================================================
 
-@omium.trace("execute_full")
+@omium.trace("decision_handler_full")
 async def _execute_full(parsed: ParsedIssue, solution: Dict, research_result: Dict, critic_result: Dict):
     """HIGH CONFIDENCE: Post comment + generate draft PR patch"""
     print(f"\n💬 [6a] Posting AI comment + draft PR suggestion...")
@@ -398,7 +501,7 @@ async def _execute_full(parsed: ParsedIssue, solution: Dict, research_result: Di
     else:
         print(f"   ⚠️  Post failed: {comment_result.get('message')}")
 
-@omium.trace("execute_with_caution")
+@omium.trace("decision_handler_caution")
 async def _execute_with_caution(parsed: ParsedIssue, solution: Dict):
     """MEDIUM CONFIDENCE: Post with disclaimer"""
     print(f"\n💬 [6b] Posting with CAUTION disclaimer...")
@@ -416,7 +519,7 @@ async def _execute_with_caution(parsed: ParsedIssue, solution: Dict):
     else:
         print(f"   ⚠️  Post failed")
 
-@omium.trace("escalate_to_human")
+@omium.trace("decision_handler_escalate")
 async def _escalate_to_human(parsed: ParsedIssue, reason: str):
     """LOW CONFIDENCE: Tag human, post minimal info"""
     print(f"\n🚨 [6c] ESCALATING to human: {reason}")
@@ -452,10 +555,6 @@ async def _handle_research_failure(parsed: ParsedIssue):
     )
     
     metrics['escalated'] += 1
-
-async def _mock_search_docs(repo_full_name: str, keywords: List[str]):
-    """Placeholder for documentation search"""
-    return {"status": "success", "docs_found": 0}
 
 # =============================================================================
 # API ENDPOINTS
@@ -499,7 +598,7 @@ async def get_queue():
     }
 
 @app.post("/webhook/github")
-@omium.trace("github_webhook")
+@omium.trace("github_webhook_handler")
 async def github_webhook(
     request: Request,
     background_tasks: BackgroundTasks,
@@ -530,8 +629,11 @@ async def github_webhook(
     except KeyError as e:
         raise HTTPException(status_code=400, detail=f"Missing field: {e}")
     
-    # Trigger full pipeline in background
-    background_tasks.add_task(process_issue_async, parsed_issue)
+    # Capture trace context before request ends
+    exec_id = omium.get_execution_id()
+    
+    # Trigger full pipeline in background with propagated context
+    background_tasks.add_task(process_issue_async, parsed_issue, exec_id)
     
     return JSONResponse(
         status_code=202,
@@ -547,11 +649,11 @@ async def github_webhook(
         }
     )
 
-@app.post("/simulate")
-@omium.trace("simulate_issue")
-async def simulate_issue(issue_payload: dict):
+@app.post("/simulate_with_payload")
+@omium.trace("simulate_issue_handler")
+async def simulate_issue_with_payload(issue_payload: dict, background_tasks: BackgroundTasks):
     """
-    Test endpoint — runs full pipeline with fake payload
+    Test endpoint — runs full pipeline with custom JSON payload
     """
     try:
         parsed = parse_issue_payload({
@@ -563,9 +665,13 @@ async def simulate_issue(issue_payload: dict):
             }),
             "sender": issue_payload.get("sender", {"login": "testuser"})
         })
-        await process_issue_async(parsed)
+        # Capture context
+        exec_id = omium.get_execution_id()
+        # Use background task to simulate real workflow
+        background_tasks.add_task(process_issue_async, parsed, exec_id)
         return {
-            "status": "pipeline_complete",
+            "status": "pipeline_triggered",
+            "message": "Custom issue queued for processing",
             "parsed": parsed.to_processing_context()
         }
     except Exception as e:

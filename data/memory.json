@@ -40,17 +40,199 @@
       "timestamp": "2026-05-15T19:22:32.990484"
     },
     {
-      "number": 42,
-      "title": "Bug: Profile picture not updating",
+      "number": 8047,
+      "title": "CRITICAL: Memory leak in worker orchestration loop",
       "type": "bug",
-      "solution_summary": "The update issue is caused by improper state handling in scratch\\trigger_demo.py. Race condition or missing validation triggers this error.",
+      "solution_summary": "The null issue is caused by improper state handling in src\\agents\\async_orchestrator.py. Race condition or missing validation triggers this error.",
       "files_modified": [
-        "scratch\\trigger_demo.py",
-        "src\\config.py",
+        "src\\agents\\async_orchestrator.py",
+        "src\\main.py",
+        "README.md"
+      ],
+      "repo": "sentinel/core-pipeline",
+      "timestamp": "2026-05-16T05:04:12.287635"
+    },
+    {
+      "number": 8056,
+      "title": "CRITICAL: Memory leak in worker orchestration loop",
+      "type": "bug",
+      "solution_summary": "The null issue is caused by improper state handling in src\\agents\\async_orchestrator.py. Race condition or missing validation triggers this error.",
+      "files_modified": [
+        "src\\agents\\async_orchestrator.py",
+        "src\\main.py",
+        "README.md"
+      ],
+      "repo": "sentinel/core-pipeline",
+      "timestamp": "2026-05-16T05:04:18.861000"
+    },
+    {
+      "number": 8116,
+      "title": "CRITICAL: Memory leak in worker orchestration loop",
+      "type": "bug",
+      "solution_summary": "The null issue is caused by improper state handling in src\\agents\\async_orchestrator.py. Race condition or missing validation triggers this error.",
+      "files_modified": [
+        "src\\agents\\async_orchestrator.py",
+        "src\\main.py",
+        "README.md"
+      ],
+      "repo": "sentinel/core-pipeline",
+      "timestamp": "2026-05-16T05:05:18.244030"
+    },
+    {
+      "number": 8182,
+      "title": "CRITICAL: Memory leak in worker orchestration loop",
+      "type": "bug",
+      "solution_summary": "The null issue is caused by improper state handling in src\\agents\\async_orchestrator.py. Race condition or missing validation triggers this error.",
+      "files_modified": [
+        "src\\agents\\async_orchestrator.py",
+        "src\\main.py",
+        "README.md"
+      ],
+      "repo": "sentinel/core-pipeline",
+      "timestamp": "2026-05-16T05:06:24.991447"
+    },
+    {
+      "number": 8294,
+      "title": "CRITICAL: Memory leak in worker orchestration loop",
+      "type": "bug",
+      "solution_summary": "The null issue is caused by improper state handling in src\\agents\\async_orchestrator.py. Race condition or missing validation triggers this error.",
+      "files_modified": [
+        "src\\agents\\async_orchestrator.py",
+        "src\\main.py",
+        "README.md"
+      ],
+      "repo": "sentinel/core-pipeline",
+      "timestamp": "2026-05-16T05:08:16.148344"
+    },
+    {
+      "number": 8485,
+      "title": "CRITICAL: Memory leak in worker orchestration loop",
+      "type": "bug",
+      "solution_summary": "The null issue is caused by improper state handling in src\\agents\\async_orchestrator.py. Race condition or missing validation triggers this error.",
+      "files_modified": [
+        "src\\agents\\async_orchestrator.py",
+        "src\\main.py",
+        "README.md"
+      ],
+      "repo": "sentinel/core-pipeline",
+      "timestamp": "2026-05-16T05:11:27.033781"
+    },
+    {
+      "number": 1,
+      "title": "Bug : Search bar overlapping header on mobile",
+      "type": "bug",
+      "solution_summary": "The search issue is caused by improper state handling in index.html. Race condition or missing validation triggers this error.",
+      "files_modified": [
+        "index.html",
+        "src\\agents\\code_retriever.py",
+        "src\\agents\\hypothesis_agent.py"
+      ],
+      "repo": "HavajCodez/Demo",
+      "timestamp": "2026-05-16T05:18:54.474549"
+    },
+    {
+      "number": 9085,
+      "title": "CRITICAL: Memory leak in worker orchestration loop",
+      "type": "bug",
+      "solution_summary": "The null issue is caused by improper state handling in src\\agents\\async_orchestrator.py. Race condition or missing validation triggers this error.",
+      "files_modified": [
+        "src\\agents\\async_orchestrator.py",
+        "src\\main.py",
+        "README.md"
+      ],
+      "repo": "sentinel/core-pipeline",
+      "timestamp": "2026-05-16T05:21:27.588156"
+    },
+    {
+      "number": 2,
+      "title": "Bug : navbar overlaps in phone",
+      "type": "bug",
+      "solution_summary": "The overlaps issue is caused by improper state handling in index.html. Race condition or missing validation triggers this error.",
+      "files_modified": [
+        "index.html",
+        "tests\\test_webhook.py",
         "src\\classifier.py"
       ],
-      "repo": "user/test-repo",
-      "timestamp": "2026-05-16T01:15:22.859221"
+      "repo": "HavajCodez/Demo",
+      "timestamp": "2026-05-16T05:25:59.401807"
+    },
+    {
+      "number": 4334,
+      "title": "CRITICAL: Memory leak in worker orchestration loop",
+      "type": "bug",
+      "solution_summary": "The null issue is caused by improper state handling in src\\agents\\async_orchestrator.py. Race condition or missing validation triggers this error.",
+      "files_modified": [
+        "src\\agents\\async_orchestrator.py",
+        "src\\main.py",
+        "README.md"
+      ],
+      "repo": "sentinel/core-pipeline",
+      "timestamp": "2026-05-16T06:48:56.512943"
+    },
+    {
+      "number": 6,
+      "title": "bug : navbar overlaps in phone",
+      "type": "bug",
+      "solution_summary": "The overlaps issue is caused by improper state handling in index.html. Race condition or missing validation triggers this error.",
+      "files_modified": [
+        "index.html",
+        "tests\\test_webhook.py",
+        "src\\classifier.py"
+      ],
+      "repo": "HavajCodez/Demo",
+      "timestamp": "2026-05-16T06:50:13.865834"
+    },
+    {
+      "number": 4681,
+      "title": "CRITICAL: Memory leak in worker orchestration loop",
+      "type": "bug",
+      "solution_summary": "The null issue is caused by improper state handling in src\\agents\\async_orchestrator.py. Race condition or missing validation triggers this error.",
+      "files_modified": [
+        "src\\agents\\async_orchestrator.py",
+        "src\\main.py",
+        "README.md"
+      ],
+      "repo": "sentinel/core-pipeline",
+      "timestamp": "2026-05-16T06:54:44.052869"
+    },
+    {
+      "number": 5229,
+      "title": "CRITICAL: Memory leak in worker orchestration loop",
+      "type": "bug",
+      "solution_summary": "The null issue is caused by improper state handling in src\\agents\\async_orchestrator.py. Race condition or missing validation triggers this error.",
+      "files_modified": [
+        "src\\agents\\async_orchestrator.py",
+        "src\\main.py",
+        "README.md"
+      ],
+      "repo": "sentinel/core-pipeline",
+      "timestamp": "2026-05-16T07:03:51.703823"
+    },
+    {
+      "number": 5580,
+      "title": "CRITICAL: Memory leak in worker orchestration loop",
+      "type": "bug",
+      "solution_summary": "The null issue is caused by improper state handling in src\\agents\\async_orchestrator.py. Race condition or missing validation triggers this error.",
+      "files_modified": [
+        "src\\agents\\async_orchestrator.py",
+        "src\\main.py",
+        "README.md"
+      ],
+      "repo": "sentinel/core-pipeline",
+      "timestamp": "2026-05-16T07:09:43.150719"
+    },
+    {
+      "number": 7,
+      "title": "bug : no api found",
+      "type": "bug",
+      "solution_summary": "The found issue is caused by improper state handling in src\\agents\\code_retriever.py. Race condition or missing validation triggers this error.",
+      "files_modified": [
+        "src\\agents\\code_retriever.py",
+        "src\\classifier.py",
+        "src\\agents\\__init__.py"
+      ],
+      "repo": "HavajCodez/Demo",
+      "timestamp": "2026-05-16T07:12:24.922762"
     }
   ],
   "patterns": {
@@ -59,9 +241,61 @@
       "clicking",
       "login",
       "button",
-      "profile",
-      "picture",
-      "updating"
+      "critical:",
+      "memory",
+      "worker",
+      "orchestration",
+      "critical:",
+      "memory",
+      "worker",
+      "orchestration",
+      "critical:",
+      "memory",
+      "worker",
+      "orchestration",
+      "critical:",
+      "memory",
+      "worker",
+      "orchestration",
+      "critical:",
+      "memory",
+      "worker",
+      "orchestration",
+      "critical:",
+      "memory",
+      "worker",
+      "orchestration",
+      "search",
+      "overlapping",
+      "header",
+      "mobile",
+      "critical:",
+      "memory",
+      "worker",
+      "orchestration",
+      "navbar",
+      "overlaps",
+      "phone",
+      "critical:",
+      "memory",
+      "worker",
+      "orchestration",
+      "navbar",
+      "overlaps",
+      "phone",
+      "critical:",
+      "memory",
+      "worker",
+      "orchestration",
+      "critical:",
+      "memory",
+      "worker",
+      "orchestration",
+      "critical:",
+      "memory",
+      "worker",
+      "orchestration",
+      "found"
     ],
     "feature": [
       "support"

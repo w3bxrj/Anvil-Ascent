@@ -5,7 +5,6 @@ Transforms system from "single-shot" to "learning copilot"
 
 import json
 import os
-import omium
 from typing import List, Dict
 from datetime import datetime
 
@@ -29,7 +28,6 @@ class MemoryAgent:
         with open(self.memory_file, 'w') as f:
             json.dump(self.memory, f, indent=2)
     
-    @omium.trace("memory_remember")
     def remember_issue(self, issue_number: int, title: str, 
                       issue_type: str, solution: Dict, repo: str):
         """Store issue for future reference"""
@@ -55,7 +53,6 @@ class MemoryAgent:
         keywords = [w.lower() for w in title.split() if len(w) > 4]
         self.memory["patterns"][issue_type].extend(keywords)
     
-    @omium.trace("memory_search")
     def find_similar_past_issues(self, title: str, issue_type: str, 
                                   repo: str, top_k: int = 3) -> List[Dict]:
         """Find historically similar issues"""

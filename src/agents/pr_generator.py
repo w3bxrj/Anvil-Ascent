@@ -3,7 +3,6 @@ PR GENERATOR: Creates actual code patch — not just comment
 MASSIVE hackathon differentiator
 """
 
-import omium
 from typing import Dict, List
 
 class PRGenerator:
@@ -11,7 +10,6 @@ class PRGenerator:
     Generates unified diff patches for suggested fixes
     """
     
-    @omium.trace("patch_generation")
     def generate_patch(self, file_path: str, original_content: str,
                       solution: Dict) -> str:
         """

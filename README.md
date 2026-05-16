@@ -1,5 +1,12 @@
 # 🛡️ SENTINEL: Autonomous Issue Resolver v4.0
 
+<<<<<<< HEAD
+=======
+<p align="center">
+  <img src="assets/sentinel_banner.png" alt="Sentinel Banner" width="100%">
+</p>
+
+>>>>>>> 6bfa262 (fix)
 > **A self-evolving, multi-agent software engineering pipeline that investigates, reasons, validates, and resolves GitHub issues with minimal human oversight.**
 
 [![Omium Tracing](https://img.shields.io/badge/Observability-Omium-blueviolet)](https://omium.ai)
@@ -159,6 +166,7 @@ Visit your [Omium Dashboard](https://omium.ai) to see the live traces.
 
 ---
 
+<<<<<<< HEAD
 ## 🤝 Contributing
 
 We welcome contributions! Whether it's a bug fix, a new agent idea, or documentation improvements.
@@ -171,4 +179,22 @@ We welcome contributions! Whether it's a bug fix, a new agent idea, or documenta
 
 ---
 
+=======
+## 📜 Whitepaper
+
+For a deep technical dive into the architecture, reasoning loops, and autonomy mechanics, read the [**SENTINEL WHITEPAPER**](SENTINEL_WHITEPAPER.md).
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Whether it's a bug fix, a new agent idea, or documentation improvements.
+
+1. Fork the repo.
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`).
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`).
+4. Push to the branch (`git push origin feature/AmazingFeature`).
+5. Open a Pull Request.
+
+>>>>>>> 6bfa262 (fix)
 ---

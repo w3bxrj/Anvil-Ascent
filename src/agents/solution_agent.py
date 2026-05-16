@@ -4,7 +4,6 @@ Solution Agent: Generate fix/analysis using LLM (Gemini/OpenAI compatible)
 
 import os
 import httpx
-import omium
 from typing import Dict, List
 
 class SolutionAgent:
@@ -19,7 +18,6 @@ class SolutionAgent:
         self.model = os.getenv("LLM_MODEL", "gemini-2.0-flash")
         self.use_mock = not self.api_key or self.api_key in ["mock", "test", ""]
     
-    @omium.trace("solution_agent")
     async def generate_solution(self, issue_title: str, issue_body: str,
                                issue_type: str, priority: str,
                                keywords: List[str],
