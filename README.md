@@ -1,104 +1,177 @@
-# 🛡️ Sentinel: Autonomous Issue Resolver v4.0
+# 🛡️ SENTINEL: Autonomous Issue Resolver v4.0
+
+<p align="center">
+  <img src="assets/sentinel_banner.png" alt="Sentinel Banner" width="100%">
+</p>
 
 > **A self-evolving, multi-agent software engineering pipeline that investigates, reasons, validates, and resolves GitHub issues with minimal human oversight.**
 
 [![Omium Tracing](https://img.shields.io/badge/Observability-Omium-blueviolet)](https://omium.ai)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.9+](https://img.shields.io/badge/Python-3.9%2B-blue)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.100.0%2B-009688)](https://fastapi.tiangolo.com/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.110.0%2B-009688)](https://fastapi.tiangolo.com/)
 
 ---
 
-## 🌌 The Vision
+## 🌌 Overview
 
 Most AI developer tools are **reactive**. They wait for a prompt, provide a snippet, and stop. **Sentinel** is **proactive**. It watches your repository, plans its own investigation, searches for context, generates competing hypotheses, and validates its own fixes before even suggesting them to a human.
 
-It's not just a chatbot; it's a **digital teammate**.
+It's not just a chatbot; it's a **digital teammate** that works while you sleep.
 
 ---
 
-## 🧠 Multi-Agent Intelligence Center
+## 🧠 The Multi-Agent Swarm
 
-Sentinel operates using a hierarchical swarm of specialized agents, each fine-tuned for a specific stage of the software development lifecycle:
+Sentinel operates using a hierarchical swarm of specialized agents, coordinated via an **Async Orchestrator**. This allows for parallel execution of non-dependent tasks while maintaining strict logical reasoning.
 
-| Agent | Responsibility | Key Tech |
+| Agent | Responsibility | Technology |
 | :--- | :--- | :--- |
-| **🧠 Planner** | The Strategist. Breaks down issues and selects tools. | CoT Reasoning |
-| **🔍 Research** | The Investigator. Performs semantic code retrieval. | ChromaDB / RAG |
-| **💡 Hypothesis** | The Thinker. Evaluates competing root-cause theories. | Evidence Matching |
-| **🛠️ Solution** | The Implementer. Generates code patches and fixes. | LLM (Gemini/Groq) |
-| **⚖️ Critic** | The Guardrail. Validates fixes and prevents hallucinations. | Calibration Logic |
-| **💾 Memory** | The Learner. Stores patterns from past successes/failures. | Vector Memory |
-| **📢 PR Gen** | The Communicator. Drafts PRs and GitHub responses. | GitHub API |
+| **🧠 Planner** | **The Strategist**. Analyzes the issue body and generates a custom investigation plan. | CoT Reasoning / LLM |
+| **🔍 Research** | **The Librarian**. Performs semantic code searches across the repository. | ChromaDB / RAG |
+| **💡 Hypothesis** | **The Scientist**. Generates competing root-cause theories with confidence scores. | Evidence Matching |
+| **🛠️ Solution** | **The Engineer**. Synthesizes the best hypothesis into concrete code changes (diffs). | LLM (Gemini/OpenAI) |
+| **⚖️ Critic** | **The Judge**. Evaluates solutions for relevance, calibration, and consistency. | Validation Logic |
+| **💾 Memory** | **The Learner**. Stores patterns from past successes and failures for future reference. | Vector Memory |
+| **📢 PR Gen** | **The Communicator**. Drafts Pull Requests and interacts with the GitHub API. | GitHub REST API |
 
 ---
 
-## ⚡ Autonomous Workflow
+## ⚡ How It Works (The Lifecycle)
 
-Sentinel doesn't follow a hardcoded script. Its workflow is **dynamic and event-driven**:
+```mermaid
+graph TD
+    A[GitHub Issue Opened] -->|Webhook| B(Classifier)
+    B -->|Priority/Type| C{Planner}
+    C --> D[Research Agent]
+    C --> E[Memory Agent]
+    D & E --> F[Hypothesis Agent]
+    F -->|Reasoning| G[Solution Agent]
+    G --> H[Critic Agent]
+    H -->|Rejected| C
+    H -->|Validated| I[PR Generator]
+    I --> J[Draft PR Created]
+```
 
 1.  **Trigger**: A GitHub Webhook notifies Sentinel of a new issue.
-2.  **Triaging**: The **Classifier** determines severity and type.
-3.  **Planning**: The **Planner** creates a custom execution graph.
-4.  **Discovery**: **Research** & **Memory** agents retrieve relevant code and historical context.
-5.  **Reasoning**: **Hypothesis** agent tests theories against the code.
-6.  **Synthesis**: **Solution** agent generates a targeted fix.
-7.  **Validation**: **Critic** agent evaluates the fix. If it fails, the loop restarts or escalates.
+2.  **Triaging**: The **Classifier** determines the severity and category (Bug, Feature, etc.).
+3.  **Planning**: The **Planner** creates a step-by-step strategy for the investigation.
+4.  **Discovery**: The **Research** & **Memory** agents retrieve relevant code and historical context.
+5.  **Reasoning**: The **Hypothesis** agent tests theories against the codebase.
+6.  **Synthesis**: The **Solution** agent generates a targeted fix.
+7.  **Validation**: The **Critic** agent evaluates the fix. If it fails, the loop restarts.
 8.  **Execution**: High-confidence fixes are posted as **Draft PRs** or detailed comments.
 
 ---
 
-## 🛠️ Tool Surface & Tech Stack
+## 🚀 Getting Started
 
--   **Backend**: FastAPI (Async-first orchestration)
--   **Observability**: **Omium SDK** (Full causal threading and trace visibility)
--   **Vector Engine**: ChromaDB (Repository indexing and semantic search)
--   **Embeddings**: Sentence-Transformers (Local, fast embeddings)
--   **LLMs**: Gemini 1.5 Pro / Flash, Groq (Llama 3), OpenAI
--   **Integration**: GitHub Webhooks & REST API
+Follow these steps to set up Sentinel on your local machine.
 
----
+### 📋 Prerequisites
 
-## 🚀 Quick Start
+- **Python 3.9+** installed.
+- A **GitHub Personal Access Token (PAT)** with `repo` permissions.
+- An **OpenAI** or **Gemini** API Key (Sentinel supports multiple providers).
+- An **Omium API Key** for full observability.
 
-### 1. Environment Setup
+### 1. Installation
+
+Clone the repository and set up a virtual environment:
+
 ```bash
 git clone https://github.com/reak-projects/anvil-hackathon.git
 cd anvil-hackathon
 python -m venv venv
-source venv/bin/activate  # venv\Scripts\activate on Windows
+# On Windows:
+venv\Scripts\activate
+# On Linux/macOS:
+source venv/bin/activate
+
 pip install -r requirements.txt
 ```
 
-### 2. Configure `.env`
+### 2. Configuration
+
+Create a `.env` file in the root directory and add your credentials:
+
 ```env
-GITHUB_TOKEN=your_pat
-OPENAI_API_KEY=your_key
-OPENAI_BASE_URL=https://api.groq.com/openai/v1 # Or OpenAI/Gemini
-LLM_MODEL=gemini-2.0-flash
-OMIUM_API_KEY=your_omium_key
+# GitHub Configuration
+GITHUB_TOKEN=your_github_personal_access_token
+GITHUB_WEBHOOK_SECRET=your_optional_webhook_secret
+
+# LLM Provider Configuration
+OPENAI_API_KEY=your_llm_api_key
+OPENAI_BASE_URL=https://api.openai.com/v1 # Or Groq/Gemini endpoints
+LLM_MODEL=gpt-4-turbo # Or gemini-1.5-pro, llama3-70b-8192
+
+# Observability
+OMIUM_API_KEY=your_omium_api_key
+
+# Server Settings
+PORT=8000
+HOST=0.0.0.0
 ```
 
-### 3. Launch Sentinel
+### 3. Running the Application
+
+Sentinel runs as a FastAPI server. Start it using the following command:
+
 ```bash
-PYTHONPATH=src uvicorn src.main:app --reload
+# Set PYTHONPATH to include the src directory
+$env:PYTHONPATH="src" # Windows PowerShell
+# OR
+export PYTHONPATH=src # Linux/macOS
+
+uvicorn src.main:app --reload
 ```
+
+The server will be available at `http://localhost:8000`.
+
+---
+
+## 🖥️ Intelligence Center (The Dashboard)
+
+Sentinel comes with a built-in **Intelligence Center** (`index.html`). This dashboard allows you to:
+- Monitor live agent status.
+- Trigger manual simulations for testing.
+- View real-time traces of the agent's thought process.
+
+To view it, simply open `index.html` in your browser while the server is running.
 
 ---
 
 ## 📊 Observability with Omium
 
-Sentinel is fully instrumented with **Omium**, providing deep visibility into:
--   Agent decision-making paths
--   RAG retrieval accuracy
--   Token usage and latency
--   Causal links between "Issue Opened" and "Fix Suggested"
+Sentinel is fully instrumented with the **Omium SDK**, providing unprecedented visibility into autonomous operations:
+- **Causal Threading**: See exactly how an issue led to a specific code change.
+- **Agent Reasoning**: Trace the internal dialogue and logic of every agent.
+- **Latency & Cost**: Monitor token usage and execution times in real-time.
+
+Visit your [Omium Dashboard](https://omium.ai) to see the live traces.
 
 ---
 
-## 📜 Whitepaper
+## 🛠️ Technology Stack
 
-For a deep dive into the architecture and autonomous logic, see the [**SENTINEL WHITEPAPER**](SENTINEL_WHITEPAPER.md).
+- **Framework**: [FastAPI](https://fastapi.tiangolo.com/) (Async orchestration)
+- **Observability**: [Omium SDK](https://omium.ai)
+- **Vector DB**: [ChromaDB](https://www.trychroma.com/) (Semantic code search)
+- **Embeddings**: [Sentence-Transformers](https://www.sbert.net/) (Local indexing)
+- **Agent Logic**: Custom Hierarchical Multi-Agent System
+- **LLMs**: Gemini 1.5, GPT-4, Llama 3 (via Groq)
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Whether it's a bug fix, a new agent idea, or documentation improvements.
+
+1. Fork the repo.
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`).
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`).
+4. Push to the branch (`git push origin feature/AmazingFeature`).
+5. Open a Pull Request.
 
 ---
 
@@ -107,5 +180,3 @@ For a deep dive into the architecture and autonomous logic, see the [**SENTINEL 
 Distributed under the MIT License. See `LICENSE` for more information.
 
 ---
-
-**Built with ❤️ for the Anvil Hackathon.**
