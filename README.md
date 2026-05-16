@@ -1,12 +1,5 @@
 # 🛡️ SENTINEL: Autonomous Issue Resolver v4.0
 
-<<<<<<< HEAD
-=======
-<p align="center">
-  <img src="assets/sentinel_banner.png" alt="Sentinel Banner" width="100%">
-</p>
-
->>>>>>> 6bfa262 (fix)
 > **A self-evolving, multi-agent software engineering pipeline that investigates, reasons, validates, and resolves GitHub issues with minimal human oversight.**
 
 [![Omium Tracing](https://img.shields.io/badge/Observability-Omium-blueviolet)](https://omium.ai)
